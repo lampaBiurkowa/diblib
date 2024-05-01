@@ -2,14 +2,26 @@
 using DibBase.ModelBase;
 using DibBase.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace DibBase.Infrastructure;
 
 public class Repository<T>(DbContext context) where T : Entity
 {
-    private readonly DbContext _context = context;
+    readonly DbContext _context = context;
 
-    public async Task RegisterEvent(Event e, CancellationToken ct) => await _context.Set<Event>().AddAsync(e, ct);
+    public async Task RegisterEvent(object obj, CancellationToken ct)
+    {
+        var e = new Event()
+        {
+            CreatedAt = DateTime.Now,
+            Payload = JsonSerializer.Serialize(obj),
+            Name = obj.GetType().FullName ?? obj.GetType().Name,
+            IsPublished = false
+        };
+
+        await _context.Set<Event>().AddAsync(e, ct);
+    }
 
     public async Task<T?> GetById(long id, CancellationToken ct)
     {
@@ -68,7 +80,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task CommitAsync(CancellationToken ct) => await _context.SaveChangesAsync(ct);
 
-    private static void SetTimestamps(T entity, DateTime timeStamp)
+    static void SetTimestamps(T entity, DateTime timeStamp)
     {
         if (entity is ITimeStamped tsEntity)
         {
@@ -77,13 +89,13 @@ public class Repository<T>(DbContext context) where T : Entity
         }
     }
 
-    private static void SetUpdatedTimestamp(T entity, DateTime timeStamp)
+    static void SetUpdatedTimestamp(T entity, DateTime timeStamp)
     {
         if (entity is ITimeStamped tsEntity)
             tsEntity.UpdatedAt = timeStamp;
     }
 
-    private async Task AuditChanges(T entity, DateTime timeStamp, CancellationToken ct)
+    async Task AuditChanges(T entity, DateTime timeStamp, CancellationToken ct)
     {
         if (entity is not IAudited a)
             return;

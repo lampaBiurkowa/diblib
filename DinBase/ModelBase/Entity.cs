@@ -4,7 +4,7 @@ namespace DibBase.ModelBase;
 
 public abstract class Entity
 {
-    private long id;
+    long id;
     public long Id
     {
         get => id;
@@ -19,5 +19,5 @@ public abstract class Entity
         }
     }
 
-    public Guid Guid { get; private set; }
+    public Guid Guid { get; set; }
 }
