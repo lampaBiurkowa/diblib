@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DibDataGenerator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5a2c6a456805ab6809a45e515c629e79a7521654")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ecc319ac916f6c2ed9303dded3969b41f3a82eb2")]
 [assembly: System.Reflection.AssemblyProductAttribute("DibDataGenerator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DibDataGenerator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

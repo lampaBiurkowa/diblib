@@ -41,13 +41,13 @@ public class Repository<T>(DbContext context) where T : Entity
         return await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
     }
 
-    public async Task<IList<T>> GetAll(int skip, int take, CancellationToken ct)
+    public IQueryable<T> GetAll(int skip, int take)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
-        return await query.Skip(skip).Take(take).ToListAsync(ct);
+        return query.Skip(skip).Take(take);
     }
 
     public async Task InsertAsync(T entity, CancellationToken ct)

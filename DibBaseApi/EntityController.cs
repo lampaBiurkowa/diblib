@@ -2,6 +2,7 @@ using DibBase.Extensions;
 using DibBase.Infrastructure;
 using DibBase.ModelBase;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DibBaseSampleApi.Controllers;
 [ApiController]
@@ -17,7 +18,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     [HttpGet]
     public async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
-        var entities = (await repository.GetAll(skip, take, ct)).Select(HidePrivateId);
+        var entities = (await repository.GetAll(skip, take).ToListAsync(ct)).Select(HidePrivateId);
         return entities != null ? Ok(entities) : NotFound();
     }
 
