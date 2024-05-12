@@ -23,8 +23,14 @@ jobs:
       - id: get_version
         uses: battila7/get-version-action@v2
           
-      - run: dotnet build diblib/diblib.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+      - run: dotnet build DinBase/DibBase.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
       - name: Create the package
-        run: dotnet pack diblib/diblib.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+        run: dotnet pack DinBase/DibBase.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
       - name: Publish to github
-        run: dotnet nuget push diblib/bin/Release/*.nupkg  -k ${{ secrets.GH_TOKEN }} -s https://nuget.pkg.github.com/DibrySoft/index.json --skip-duplicate
+        run: dotnet nuget push DinBase/bin/Release/*.nupkg  -k ${{ secrets.GH_TOKEN }} -s https://nuget.pkg.github.com/DibrySoft/index.json --skip-duplicate
+        #todo matrix
+      - run: dotnet build DibBaseApi/DibBaseApi.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+      - name: Create the package
+        run: dotnet pack DibBaseApi/DibBaseApi.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+      - name: Publish to github
+        run: dotnet nuget push DibBaseApi/bin/Release/*.nupkg  -k ${{ secrets.GH_TOKEN }} -s https://nuget.pkg.github.com/DibrySoft/index.json --skip-duplicate
