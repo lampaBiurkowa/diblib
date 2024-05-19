@@ -37,8 +37,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     {
         await repository.InsertAsync(entity, ct);
         await repository.CommitAsync(ct);
-        Console.WriteLine(entity.Id);
-        return Ok(entity.Guid);
+        return Ok(entity.Obfuscate());
     }
 
     [HttpPut("{id}")]
@@ -47,8 +46,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
         entity.Id = id.Deobfuscate().Id;
         await repository.UpdateAsync(entity, ct);
         await repository.CommitAsync(ct);
-        entity.Id = default; //█▬█ █ ▀█▀
-        return Ok(entity.Guid);
+        return Ok(entity.Obfuscate());
     }
 
     [HttpDelete("{id}")]
