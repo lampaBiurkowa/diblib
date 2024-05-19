@@ -32,7 +32,10 @@ public class DibContext : DbContext
 
         var entitiesImplementingITimestamped = modelBuilder.Model.GetEntityTypes().Where(e => typeof(ITimeStamped).IsAssignableFrom(e.ClrType));
         foreach (var e in entitiesImplementingITimestamped)
+        {
             modelBuilder.Entity(e.ClrType).Property(nameof(ITimeStamped.CreatedAt)).IsRequired();
+            modelBuilder.Entity(e.ClrType).Property(nameof(ITimeStamped.UpdatedAt)).IsRequired();
+        }
 
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }

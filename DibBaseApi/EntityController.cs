@@ -16,24 +16,24 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
+    public virtual async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
         var entities = (await repository.GetAll(skip, take).ToListAsync(ct)).Select(HidePrivateId);
         return entities != null ? Ok(entities) : NotFound();
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> Get(Guid id, CancellationToken ct)
+    public virtual async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
         var entity = await repository.GetById(id.Deobfuscate().Id, ct);
         return entity != null ? Ok(HidePrivateId(entity)) : NotFound();
     }
 
     [HttpPost("ids")]
-    public async Task<IActionResult> Get(List<Guid> ids, CancellationToken ct) => Ok((await repository.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct)).Select(HidePrivateId));
+    public virtual async Task<IActionResult> Get(List<Guid> ids, CancellationToken ct) => Ok((await repository.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct)).Select(HidePrivateId));
 
     [HttpPost]
-    public async Task<IActionResult> Add(T entity, CancellationToken ct)
+    public virtual async Task<IActionResult> Add(T entity, CancellationToken ct)
     {
         await repository.InsertAsync(entity, ct);
         await repository.CommitAsync(ct);
@@ -41,7 +41,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, T entity, CancellationToken ct)
+    public virtual async Task<IActionResult> Update(Guid id, T entity, CancellationToken ct)
     {
         entity.Id = id.Deobfuscate().Id;
         await repository.UpdateAsync(entity, ct);
@@ -50,7 +50,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    public virtual async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         await repository.DeleteAsync(id.Deobfuscate().Id, ct);
         await repository.CommitAsync(ct);
