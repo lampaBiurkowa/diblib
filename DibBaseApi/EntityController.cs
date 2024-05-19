@@ -46,7 +46,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
         entity.Id = id.Deobfuscate().Id;
         await repository.UpdateAsync(entity, ct);
         await repository.CommitAsync(ct);
-        return Ok(entity.Obfuscate());
+        return Ok(id);
     }
 
     [HttpDelete("{id}")]
