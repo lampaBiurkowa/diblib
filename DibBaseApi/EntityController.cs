@@ -23,17 +23,17 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     }
 
     [HttpGet("{id}")]
-    public virtual async Task<IActionResult> Get(Guid id, CancellationToken ct)
+    public virtual async Task<ActionResult<T>> Get(Guid id, CancellationToken ct)
     {
         var entity = await repository.GetById(id.Deobfuscate().Id, ct);
         return entity != null ? Ok(HidePrivateId(entity)) : NotFound();
     }
 
     [HttpPost("ids")]
-    public virtual async Task<IActionResult> Get(List<Guid> ids, CancellationToken ct) => Ok((await repository.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct)).Select(HidePrivateId));
+    public virtual async Task<ActionResult<List<T>>> Get(List<Guid> ids, CancellationToken ct) => Ok((await repository.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct)).Select(HidePrivateId));
 
     [HttpPost]
-    public virtual async Task<IActionResult> Add(T entity, CancellationToken ct)
+    public virtual async Task<ActionResult<Guid>> Add(T entity, CancellationToken ct)
     {
         await repository.InsertAsync(entity, ct);
         await repository.CommitAsync(ct);
@@ -41,7 +41,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     }
 
     [HttpPut("{id}")]
-    public virtual async Task<IActionResult> Update(Guid id, T entity, CancellationToken ct)
+    public virtual async Task<ActionResult<Guid>> Update(Guid id, T entity, CancellationToken ct)
     {
         entity.Id = id.Deobfuscate().Id;
         await repository.UpdateAsync(entity, ct);
