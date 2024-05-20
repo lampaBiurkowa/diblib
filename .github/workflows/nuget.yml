@@ -34,3 +34,9 @@ jobs:
         run: dotnet pack DibBaseApi/DibBaseApi.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
       - name: Publish to github
         run: dotnet nuget push DibBaseApi/bin/Release/*.nupkg  -k ${{ secrets.GH_TOKEN }} -s https://nuget.pkg.github.com/DibrySoft/index.json --skip-duplicate
+
+      - run: dotnet build DibDataGenerator/DibDataGenerator.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+      - name: Create the package
+        run: dotnet pack DibDataGenerator/DibDataGenerator.csproj --configuration Release /p:Version=${{ steps.get_version.outputs.version-without-v }}
+      - name: Publish to github
+        run: dotnet nuget push DibDataGenerator/bin/Release/*.nupkg  -k ${{ secrets.GH_TOKEN }} -s https://nuget.pkg.github.com/DibrySoft/index.json --skip-duplicate
