@@ -41,7 +41,7 @@ public class Repository<T>(DbContext context) where T : Entity
         return await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
     }
 
-    public IQueryable<T> GetAll(int skip, int take)
+    public IQueryable<T> GetAll(int skip = 0, int take = 1000)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
