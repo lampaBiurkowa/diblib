@@ -6,6 +6,8 @@ namespace DibDataGenerator;
 
 public class EntityPopulator
 {
+    static Dictionary<string, long> uniqueIntSequence = new();
+
     public static async Task Build(DbContext dbContext)
     {
         var entityTypes = dbContext.Model.GetEntityTypes()
@@ -51,6 +53,16 @@ public class EntityPopulator
             else
             {
                 var randomValue = GenerateRandomValue(property.ClrType);
+                if (HasUniqueConstraint(property, dbContext) && property.ClrType == typeof(Int64))
+                {
+                    var key = $"{entity.GetType()}:{property.Name}";
+                    if (!uniqueIntSequence.ContainsKey(key))
+                        uniqueIntSequence.Add(key, 1);
+
+                    randomValue = uniqueIntSequence[key];
+                    uniqueIntSequence[key]++;
+                }
+                
                 var propertyInfo = entity.GetType().GetProperty(property.Name);
                 propertyInfo?.SetValue(entity, randomValue);
             }
@@ -86,5 +98,12 @@ public class EntityPopulator
         }
 
         return null;
+    }
+
+    static bool HasUniqueConstraint(IProperty property, DbContext dbContext)
+    {
+        var entityType = dbContext.Model.GetEntityTypes().FirstOrDefault(t => t.ClrType == property.DeclaringType.ClrType);
+        var uniqueConstraint = entityType?.FindIndex(property);
+        return uniqueConstraint != null;
     }
 }
