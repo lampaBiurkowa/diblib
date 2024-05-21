@@ -42,13 +42,13 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
         return Ok(entity.Obfuscate());
     }
 
-    [HttpPut("{id}")]
-    public virtual async Task<ActionResult<Guid>> Update(Guid id, T entity, CancellationToken ct)
+    [HttpPut()]
+    public virtual async Task<ActionResult<Guid>> Update(T entity, CancellationToken ct)
     {
-        entity.Id = id.Deobfuscate().Id;
+        entity.Id = entity.Guid.Deobfuscate().Id;
         await repo.UpdateAsync(entity, ct);
         await repo.CommitAsync(ct);
-        return Ok(id);
+        return Ok(entity.Guid);
     }
 
     [HttpDelete("{id}")]
