@@ -18,12 +18,16 @@ public class DibContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        var allEntities = modelBuilder.Model.GetEntityTypes();
+        var allEntities = modelBuilder.Model.GetEntityTypes().Where(x => x.Name != nameof(DsId));
         foreach (var e in allEntities)
         {
             modelBuilder.Entity(e.ClrType).HasKey(nameof(Entity.Id));
             modelBuilder.Entity(e.ClrType).Property(nameof(Entity.Id)).IsRequired();
             modelBuilder.Entity(e.ClrType).Ignore(nameof(Entity.Guid));
+
+            var propertiesToIgnore = e.ClrType.GetProperties().Where(p => p.IsDefined(typeof(DsIdAttribute), false)).Select(p => p.Name);
+            foreach (var propertyName in propertiesToIgnore)
+                modelBuilder.Entity(e.ClrType).Ignore(propertyName);
         }
 
         var entitiesImplementingIName = modelBuilder.Model.GetEntityTypes().Where(e => typeof(INamed).IsAssignableFrom(e.ClrType));

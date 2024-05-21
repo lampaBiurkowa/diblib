@@ -2,6 +2,8 @@
 using DibBase.ModelBase;
 using DibBase.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace DibBase.Infrastructure;
@@ -29,7 +31,10 @@ public class Repository<T>(DbContext context) where T : Entity
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
-        return await query.FirstOrDefaultAsync(e => e.Id == id, ct);
+        var entity = await query.FirstOrDefaultAsync(e => e.Id == id, ct);
+        if (entity != null) entity = FillDsIds(entity);
+
+        return entity;
     }
 
     public async Task<List<T>> GetByIds(IEnumerable<long> ids, CancellationToken ct)
@@ -38,16 +43,19 @@ public class Repository<T>(DbContext context) where T : Entity
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
-        return await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
+        var results = await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
+        return results.Select(FillDsIds).ToList();
     }
 
-    public IQueryable<T> GetAll(int skip = 0, int take = 1000)
+    public async Task<List<T>> GetAll(int skip = 0, int take = 1000, Expression<Func<T, bool>>? restrict = null, CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
-        return query.Skip(skip).Take(take);
+        if (restrict != null) query = query.Where(restrict);
+
+        return (await query.Skip(skip).Take(take).ToListAsync(ct)).Select(FillDsIds).ToList();
     }
 
     public async Task InsertAsync(T entity, CancellationToken ct)
@@ -62,6 +70,9 @@ public class Repository<T>(DbContext context) where T : Entity
     {
         var timeStamp = DateTime.Now;
         Repository<T>.SetUpdatedTimestamp(entity, timeStamp);
+
+        entity = SetIdsFromDsIds(entity);
+
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
     }
@@ -118,5 +129,51 @@ public class Repository<T>(DbContext context) where T : Entity
             };
             await _context.Set<Audit>().AddAsync(audit, ct);
         }
+    }
+
+    T FillDsIds(T entity)
+    {
+        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsIdAttribute), false));
+        foreach (var p in props)
+        {
+            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsIdAttribute));
+            if (attributeData != null)
+            {
+                var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                if (string.IsNullOrEmpty(navigationProperty)) break;
+                
+                if (p.PropertyType == typeof(DsId))
+                {
+                    var refId = (long?)_context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
+                    if (refId != null && navigationProperty != null)
+                        p.SetValue(entity, new DsId() { Guid = ((long)refId).Obfuscate(navigationProperty) });
+                }
+            }
+        }
+
+        return entity;
+    }
+
+
+    T SetIdsFromDsIds(T entity)
+    {
+        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsIdAttribute), false));
+        foreach (var p in props)
+        {
+            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsIdAttribute));
+            if (attributeData != null)
+            {
+                var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
+                if (string.IsNullOrEmpty(navigationProperty)) break;
+                
+                if (p.PropertyType == typeof(DsId))
+                {
+                    var value = ((DsId?)p.GetValue(entity))?.Guid;
+                    _context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
+                }
+            }
+        }
+
+        return entity;
     }
 }

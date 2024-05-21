@@ -20,7 +20,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     [HttpGet]
     public virtual async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
-        var entities = (await repo.GetAll(skip, take).ToListAsync(ct)).Select(HidePrivateId);
+        var entities = (await repo.GetAll(skip, take, ct: ct)).Select(HidePrivateId);
         return entities != null ? Ok(entities) : NotFound();
     }
 
@@ -42,7 +42,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
         return Ok(entity.Obfuscate());
     }
 
-    [HttpPut()]
+    [HttpPut]
     public virtual async Task<ActionResult<Guid>> Update(T entity, CancellationToken ct)
     {
         entity.Id = entity.Guid.Deobfuscate().Id;
