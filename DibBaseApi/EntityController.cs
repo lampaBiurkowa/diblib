@@ -1,8 +1,8 @@
 using DibBase.Extensions;
 using DibBase.Infrastructure;
 using DibBase.ModelBase;
+using DibBase.Obfuscation;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DibBaseSampleApi.Controllers;
 [ApiController]
@@ -14,6 +14,13 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     protected T HidePrivateId(T entity)
     {
         entity.Id = default;
+
+        var props = entity.GetType().GetProperties()
+        .Where(prop => Attribute.IsDefined(prop, typeof(DsLongAttribute)));
+
+        foreach (var p in props)
+            p.SetValue(entity, default);
+        
         return entity;
     }
 

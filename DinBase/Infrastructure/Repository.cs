@@ -1,6 +1,7 @@
 ﻿using DibBase.Extensions;
 using DibBase.ModelBase;
 using DibBase.Models;
+using DibBase.Obfuscation;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Linq.Expressions;
@@ -133,20 +134,20 @@ public class Repository<T>(DbContext context) where T : Entity
 
     T FillDsIds(T entity)
     {
-        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsIdAttribute), false));
+        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
         foreach (var p in props)
         {
-            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsIdAttribute));
+            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsGuidAttribute));
             if (attributeData != null)
             {
                 var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
                 if (string.IsNullOrEmpty(navigationProperty)) break;
                 
-                if (p.PropertyType == typeof(DsId))
+                if (p.PropertyType == typeof(Guid))
                 {
                     var refId = (long?)_context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
                     if (refId != null && navigationProperty != null)
-                        p.SetValue(entity, new DsId() { Guid = ((long)refId).Obfuscate(navigationProperty) });
+                        p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
                 }
             }
         }
@@ -154,21 +155,20 @@ public class Repository<T>(DbContext context) where T : Entity
         return entity;
     }
 
-
     T SetIdsFromDsIds(T entity)
     {
-        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsIdAttribute), false));
+        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
         foreach (var p in props)
         {
-            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsIdAttribute));
+            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsGuidAttribute));
             if (attributeData != null)
             {
                 var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
                 if (string.IsNullOrEmpty(navigationProperty)) break;
                 
-                if (p.PropertyType == typeof(DsId))
+                if (p.PropertyType == typeof(Guid))
                 {
-                    var value = ((DsId?)p.GetValue(entity))?.Guid;
+                    var value = (Guid?)p.GetValue(entity);
                     _context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
                 }
             }
