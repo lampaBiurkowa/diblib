@@ -1,7 +1,9 @@
+using System.Reflection;
 using DibBase.Extensions;
 using DibBase.Infrastructure;
 using DibBase.ModelBase;
 using DibBase.Obfuscation;
+using DibBaseApi;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DibBaseSampleApi.Controllers;
@@ -11,35 +13,36 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
 {
     protected Repository<T> repo = repository;
 
-    protected T HidePrivateId(T entity)
-    {
-        entity.Id = default;
+    // protected T HidePrivateId(T entity)
+    // {
+    //     entity.Id = default;
 
-        var props = entity.GetType().GetProperties()
-        .Where(prop => Attribute.IsDefined(prop, typeof(DsLongAttribute)));
+    //     var props = entity.GetType().GetProperties()
+    //     .Where(prop => Attribute.IsDefined(prop, typeof(DsLongAttribute)));
 
-        foreach (var p in props)
-            p.SetValue(entity, default);
+    //     foreach (var p in props)
+    //         p.SetValue(entity, default);
         
-        return entity;
-    }
+    //     return entity;
+    // }
 
     [HttpGet]
     public virtual async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
-        var entities = (await repo.GetAll(skip, take, ct: ct)).Select(HidePrivateId);
+        var entities = (await repo.GetAll(skip, take, ct: ct)).Select(IdHelper.HidePrivateId);
         return entities != null ? Ok(entities) : NotFound();
     }
 
     [HttpGet("{id}")]
     public virtual async Task<ActionResult<T>> Get(Guid id, CancellationToken ct)
     {
-        var entity = await repo.GetById(id.Deobfuscate().Id, ct);
-        return entity != null ? Ok(HidePrivateId(entity)) : NotFound();
+        var entity = await repo.GetById(id.Deobfuscate().Id, ct: ct);
+        return entity != null ? Ok(IdHelper.HidePrivateId(entity)) : NotFound();
     }
 
     [HttpPost("ids")]
-    public virtual async Task<ActionResult<List<T>>> Get(List<Guid> ids, CancellationToken ct) => Ok((await repo.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct)).Select(HidePrivateId));
+    public virtual async Task<ActionResult<List<T>>> Get(List<Guid> ids, CancellationToken ct) =>
+        Ok((await repo.GetByIds(ids.Select(x => x.Deobfuscate().Id), ct: ct)).Select(IdHelper.HidePrivateId));
 
     [HttpPost]
     public virtual async Task<ActionResult<Guid>> Add(T entity, CancellationToken ct)

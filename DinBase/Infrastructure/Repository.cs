@@ -26,11 +26,13 @@ public class Repository<T>(DbContext context) where T : Entity
         await _context.Set<Event>().AddAsync(e, ct);
     }
 
-    public async Task<T?> GetById(long id, CancellationToken ct)
+    public async Task<T?> GetById(long id, IEnumerable<Expression<Func<T, object>>>? expand = null, CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
+
+        if (expand != null) query = query.ApplyExpand(expand);
 
         var entity = await query.FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity != null) entity = FillDsIds(entity);
@@ -38,23 +40,29 @@ public class Repository<T>(DbContext context) where T : Entity
         return entity;
     }
 
-    public async Task<List<T>> GetByIds(IEnumerable<long> ids, CancellationToken ct)
+    public async Task<List<T>> GetByIds(IEnumerable<long> ids, IEnumerable<Expression<Func<T, object>>>? expand = null, CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
+        if (expand != null) query = query.ApplyExpand(expand);
+
         var results = await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
         return results.Select(FillDsIds).ToList();
     }
 
-    public async Task<List<T>> GetAll(int skip = 0, int take = 1000, Expression<Func<T, bool>>? restrict = null, CancellationToken ct = default)
+    public async Task<List<T>> GetAll(int skip = 0, int take = 1000,
+        Expression<Func<T, bool>>? restrict = null,
+        IEnumerable<Expression<Func<T, object>>>? expand = null,
+        CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
         if (restrict != null) query = query.Where(restrict);
+        if (expand != null) query = query.ApplyExpand(expand);
 
         return (await query.Skip(skip).Take(take).ToListAsync(ct)).Select(FillDsIds).ToList();
     }
@@ -80,7 +88,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task DeleteAsync(long id, CancellationToken ct)
     {
-        var entity = await GetById(id, ct);
+        var entity = await GetById(id, ct: ct);
         if (entity is ISoftDelete sd)
         {
             sd.IsDeleted = true;
@@ -149,6 +157,24 @@ public class Repository<T>(DbContext context) where T : Entity
                     if (refId != null && navigationProperty != null)
                         p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
                 }
+            }
+        }
+
+        var nestedProps = entity.GetType().GetProperties().Where(x => typeof(Entity).IsAssignableFrom(x.PropertyType));
+        foreach (var p in nestedProps)
+        {
+            var nestedEntity = p.GetValue(entity);
+            if (nestedEntity != null)
+            {
+                var nestedEntityType = p.PropertyType;
+                var repositoryType = typeof(Repository<>).MakeGenericType(nestedEntityType);
+                var nestedRepository = Activator.CreateInstance(repositoryType, _context);
+
+                var method = repositoryType.GetMethod(nameof(FillDsIds), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (method == null) continue;
+
+                var nestedFilledEntity = method.Invoke(nestedRepository, [nestedEntity]);
+                p.SetValue(entity, nestedFilledEntity);
             }
         }
 
