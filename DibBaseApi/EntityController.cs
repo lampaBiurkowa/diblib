@@ -13,19 +13,6 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
 {
     protected Repository<T> repo = repository;
 
-    // protected T HidePrivateId(T entity)
-    // {
-    //     entity.Id = default;
-
-    //     var props = entity.GetType().GetProperties()
-    //     .Where(prop => Attribute.IsDefined(prop, typeof(DsLongAttribute)));
-
-    //     foreach (var p in props)
-    //         p.SetValue(entity, default);
-        
-    //     return entity;
-    // }
-
     [HttpGet]
     public virtual async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
