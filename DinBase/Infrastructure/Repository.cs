@@ -75,6 +75,7 @@ public class Repository<T>(DbContext context) where T : Entity
     {
         var timeStamp = DateTime.Now;
         Repository<T>.SetTimestamps(entity, timeStamp);
+        IdFiller.SetIdsFromDsIds(entity, _context);
         await AuditChanges(entity, timeStamp, ct);
         await _context.Set<T>().AddAsync(entity, ct);
     }
@@ -83,9 +84,7 @@ public class Repository<T>(DbContext context) where T : Entity
     {
         var timeStamp = DateTime.Now;
         Repository<T>.SetUpdatedTimestamp(entity, timeStamp);
-
         IdFiller.SetIdsFromDsIds(entity, _context);
-
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
     }
