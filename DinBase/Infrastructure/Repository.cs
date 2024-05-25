@@ -3,6 +3,7 @@ using DibBase.ModelBase;
 using DibBase.Models;
 using DibBase.Obfuscation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Data;
 using System.Linq.Expressions;
 using System.Text.Json;
@@ -35,7 +36,7 @@ public class Repository<T>(DbContext context) where T : Entity
         if (expand != null) query = query.ApplyExpand(expand);
 
         var entity = await query.FirstOrDefaultAsync(e => e.Id == id, ct);
-        if (entity != null) entity = FillDsIds(entity);
+        if (entity != null) IdFiller.FillDsIds(entity, _context);
 
         return entity;
     }
@@ -49,7 +50,8 @@ public class Repository<T>(DbContext context) where T : Entity
         if (expand != null) query = query.ApplyExpand(expand);
 
         var results = await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
-        return results.Select(FillDsIds).ToList();
+        results.ForEach(x => IdFiller.FillDsIds(x, _context));
+        return results;
     }
 
     public async Task<List<T>> GetAll(int skip = 0, int take = 1000,
@@ -64,7 +66,9 @@ public class Repository<T>(DbContext context) where T : Entity
         if (restrict != null) query = query.Where(restrict);
         if (expand != null) query = query.ApplyExpand(expand);
 
-        return (await query.Skip(skip).Take(take).ToListAsync(ct)).Select(FillDsIds).ToList();
+        var results = await query.Skip(skip).Take(take).ToListAsync(ct);
+        results.ForEach(x => IdFiller.FillDsIds(x, _context));
+        return results;
     }
 
     public async Task InsertAsync(T entity, CancellationToken ct)
@@ -73,7 +77,6 @@ public class Repository<T>(DbContext context) where T : Entity
         Repository<T>.SetTimestamps(entity, timeStamp);
         await AuditChanges(entity, timeStamp, ct);
         await _context.Set<T>().AddAsync(entity, ct);
-        FillDsIds(entity);
     }
 
     public async Task UpdateAsync(T entity, CancellationToken ct)
@@ -81,11 +84,10 @@ public class Repository<T>(DbContext context) where T : Entity
         var timeStamp = DateTime.Now;
         Repository<T>.SetUpdatedTimestamp(entity, timeStamp);
 
-        entity = SetIdsFromDsIds(entity);
+        IdFiller.SetIdsFromDsIds(entity, _context);
 
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
-        FillDsIds(entity);
     }
 
     public async Task DeleteAsync(long id, CancellationToken ct)
@@ -100,7 +102,18 @@ public class Repository<T>(DbContext context) where T : Entity
             _context.Set<T>().Remove(entity);
     }
 
-    public async Task CommitAsync(CancellationToken ct) => await _context.SaveChangesAsync(ct);
+    public async Task CommitAsync(CancellationToken ct)
+    {
+        var addedEntities = _context.ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        await _context.SaveChangesAsync(ct);
+        foreach (var entity in addedEntities)
+            if (entity is Entity e)
+                IdFiller.FillDsIds(e, _context);
+    }
 
     static void SetTimestamps(T entity, DateTime timeStamp)
     {
@@ -140,68 +153,5 @@ public class Repository<T>(DbContext context) where T : Entity
             };
             await _context.Set<Audit>().AddAsync(audit, ct);
         }
-    }
-
-    T FillDsIds(T entity)
-    {
-        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
-        foreach (var p in props)
-        {
-            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsGuidAttribute));
-            if (attributeData != null)
-            {
-                var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
-                if (string.IsNullOrEmpty(navigationProperty)) break;
-                
-                if (p.PropertyType == typeof(Guid))
-                {
-                    var refId = (long?)_context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
-                    if (refId != null && navigationProperty != null)
-                        p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
-                }
-            }
-        }
-
-        var nestedProps = entity.GetType().GetProperties().Where(x => typeof(Entity).IsAssignableFrom(x.PropertyType));
-        foreach (var p in nestedProps)
-        {
-            var nestedEntity = p.GetValue(entity);
-            if (nestedEntity != null)
-            {
-                var nestedEntityType = p.PropertyType;
-                var repositoryType = typeof(Repository<>).MakeGenericType(nestedEntityType);
-                var nestedRepository = Activator.CreateInstance(repositoryType, _context);
-
-                var method = repositoryType.GetMethod(nameof(FillDsIds), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (method == null) continue;
-
-                var nestedFilledEntity = method.Invoke(nestedRepository, [nestedEntity]);
-                p.SetValue(entity, nestedFilledEntity);
-            }
-        }
-
-        return entity;
-    }
-
-    T SetIdsFromDsIds(T entity)
-    {
-        var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
-        foreach (var p in props)
-        {
-            var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsGuidAttribute));
-            if (attributeData != null)
-            {
-                var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
-                if (string.IsNullOrEmpty(navigationProperty)) break;
-                
-                if (p.PropertyType == typeof(Guid))
-                {
-                    var value = (Guid?)p.GetValue(entity);
-                    _context.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
-                }
-            }
-        }
-
-        return entity;
     }
 }
