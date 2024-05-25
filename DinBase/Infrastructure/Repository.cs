@@ -73,6 +73,7 @@ public class Repository<T>(DbContext context) where T : Entity
         Repository<T>.SetTimestamps(entity, timeStamp);
         await AuditChanges(entity, timeStamp, ct);
         await _context.Set<T>().AddAsync(entity, ct);
+        FillDsIds(entity);
     }
 
     public async Task UpdateAsync(T entity, CancellationToken ct)
@@ -84,6 +85,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
+        FillDsIds(entity);
     }
 
     public async Task DeleteAsync(long id, CancellationToken ct)
