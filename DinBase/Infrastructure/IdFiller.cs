@@ -53,7 +53,8 @@ public static class IdFiller
                 if (p.PropertyType == typeof(Guid))
                 {
                     var value = (Guid?)p.GetValue(entity);
-                    ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
+                    if (value != default)
+                        ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
                 }
             }
         }
