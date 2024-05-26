@@ -9,6 +9,8 @@ public static class IdFiller
 {
     public static void FillDsIds(Entity entity, DbContext ctx)
     {
+        entity.Guid = entity.Obfuscate();
+        
         var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
         foreach (var p in props)
         {
