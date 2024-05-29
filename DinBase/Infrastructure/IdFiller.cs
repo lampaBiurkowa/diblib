@@ -60,5 +60,33 @@ public static class IdFiller
                 }
             }
         }
+
+        var nestedProps = entity.GetType().GetProperties().Where(x => typeof(Entity).IsAssignableFrom(x.PropertyType));
+        foreach (var p in nestedProps)
+        {
+            var nestedEntity = p.GetValue(entity);
+            if (nestedEntity != null && nestedEntity is Entity nestedEntityInstance)
+            {
+                SetIdsFromDsIds(nestedEntityInstance, ctx);
+                p.SetValue(entity, nestedEntityInstance);
+            }
+        }
+        // var props = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidAttribute), false));
+        // foreach (var p in props)
+        // {
+        //     var attributeData = p.GetCustomAttributesData().FirstOrDefault(x => x.AttributeType == typeof(DsGuidAttribute));
+        //     if (attributeData != null)
+        //     {
+        //         var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
+        //         if (string.IsNullOrEmpty(navigationProperty)) break;
+                
+        //         if (p.PropertyType == typeof(Guid))
+        //         {
+        //             var value = (Guid?)p.GetValue(entity);
+        //             if (value != default(Guid))
+        //                 ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue = value?.Deobfuscate().Id;
+        //         }
+        //     }
+        // }
     }
 }
