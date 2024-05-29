@@ -63,8 +63,8 @@ public class Repository<T>(DbContext context) where T : Entity
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
-        if (restrict != null) query = query.Where(restrict);
         if (expand != null) query = query.ApplyExpand(expand);
+        if (restrict != null) query = query.Where(restrict);
 
         var results = await query.Skip(skip).Take(take).ToListAsync(ct);
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
