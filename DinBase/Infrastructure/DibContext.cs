@@ -22,7 +22,7 @@ public class DibContext : DbContext
         var allEntities = modelBuilder.Model.GetEntityTypes().Where(x => x.Name != "DsGuid"); //todo cos
         foreach (var e in allEntities)
         {
-            if (!typeof(IDerivedKey).IsAssignableFrom(e.ClrType))
+            if (typeof(IDerivedKey).IsAssignableFrom(e.ClrType))
                 continue;
             
             modelBuilder.Entity(e.ClrType).HasKey(nameof(Entity.Id));
