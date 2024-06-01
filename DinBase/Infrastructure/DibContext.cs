@@ -23,12 +23,12 @@ public class DibContext : DbContext
         foreach (var e in allEntities)
         {
             if (!typeof(IDerivedKey).IsAssignableFrom(e.ClrType))
-            {
-                modelBuilder.Entity(e.ClrType).HasKey(nameof(Entity.Id));
-                modelBuilder.Entity(e.ClrType).Property(nameof(Entity.Id)).IsRequired();
-                modelBuilder.Entity(e.ClrType).Ignore(nameof(Entity.Guid));
-            }
-
+                continue;
+            
+            modelBuilder.Entity(e.ClrType).HasKey(nameof(Entity.Id));
+            modelBuilder.Entity(e.ClrType).Property(nameof(Entity.Id)).IsRequired();
+            modelBuilder.Entity(e.ClrType).Ignore(nameof(Entity.Guid));
+            
             var propertiesToIgnore = e.ClrType.GetProperties().Where(p => p.IsDefined(typeof(DsGuidAttribute), false)).Select(p => p.Name);
             foreach (var propertyName in propertiesToIgnore)
                 modelBuilder.Entity(e.ClrType).Ignore(propertyName);
