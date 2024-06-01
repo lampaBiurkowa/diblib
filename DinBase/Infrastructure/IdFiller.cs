@@ -36,7 +36,7 @@ public static class IdFiller
                                     typeForObfuscation = parentType;
                             }
 
-                            p.SetValue(entity, typeForObfuscation.Name);
+                            p.SetValue(entity, ((long)refId).Obfuscate(typeForObfuscation.Name));
                         }
                     }
 
