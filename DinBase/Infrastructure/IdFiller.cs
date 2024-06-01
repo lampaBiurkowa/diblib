@@ -23,8 +23,27 @@ public static class IdFiller
                 if (p.PropertyType == typeof(Guid))
                 {
                     var refId = (long?)ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
-                    if (refId != null && navigationProperty != null)
-                        p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
+                    if (refId != null)
+                    {
+                        var navigationPropertyType = entity.GetType().GetProperty(navigationProperty)?.PropertyType;
+                        if (navigationPropertyType != null)
+                        {
+                            var typeForObfuscation = navigationPropertyType;
+                            if (typeof(IDerivedKey).IsAssignableFrom(navigationPropertyType))
+                            {
+                                var parentType = GetParentType(navigationPropertyType);
+                                if (parentType != null)
+                                    typeForObfuscation = parentType;
+                            }
+
+                            p.SetValue(entity, typeForObfuscation.Name);
+                        }
+                    }
+
+
+                    // var refId = (long?)ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
+                    // if (refId != null && navigationProperty != null)
+                    //     p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
                 }
             }
         }
@@ -71,5 +90,14 @@ public static class IdFiller
                 p.SetValue(entity, nestedEntityInstance);
             }
         }
+    }
+
+    static Type? GetParentType(Type entityType)
+    {
+        var parentType = entityType.BaseType;
+        if (parentType != null && typeof(Entity).IsAssignableFrom(parentType))
+            return parentType;
+
+        return null;
     }
 }
