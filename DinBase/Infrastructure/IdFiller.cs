@@ -39,11 +39,6 @@ public static class IdFiller
                             p.SetValue(entity, ((long)refId).Obfuscate(typeForObfuscation.Name));
                         }
                     }
-
-
-                    // var refId = (long?)ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
-                    // if (refId != null && navigationProperty != null)
-                    //     p.SetValue(entity, ((long)refId).Obfuscate(navigationProperty));
                 }
             }
         }

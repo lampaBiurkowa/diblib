@@ -70,6 +70,17 @@ public class Repository<T>(DbContext context) where T : Entity
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
         return results;
     }
+    
+    public async Task<int> GetCount(Expression<Func<T, bool>>? restrict = null, CancellationToken ct = default)
+    {
+        IQueryable<T> query = _context.Set<T>();
+        if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
+
+        if (restrict != null) query = query.Where(restrict);
+
+        return await query.CountAsync(ct);
+    }
 
     public async Task InsertAsync(T entity, CancellationToken ct)
     {
