@@ -125,6 +125,8 @@ public class Repository<T>(DbContext context) where T : Entity
                 IdFiller.FillDsIds(e, _context);
     }
 
+    public void Clear() => _context.ChangeTracker.Clear();
+
     static void SetTimestamps(T entity, DateTime timeStamp)
     {
         if (entity is ITimeStamped tsEntity)
