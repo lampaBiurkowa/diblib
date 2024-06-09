@@ -14,7 +14,7 @@ public class EntityController<T>(Repository<T> repository) : ControllerBase wher
     protected Repository<T> repo = repository;
 
     [HttpGet]
-    public virtual async Task<IActionResult> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
+    public virtual async Task<ActionResult<List<T>>> Get(int skip = 0, int take = 1000, CancellationToken ct = default)
     {
         var entities = (await repo.GetAll(skip, take, ct: ct)).Select(IdHelper.HidePrivateId);
         return entities != null ? Ok(entities) : NotFound();
