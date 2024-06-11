@@ -1,7 +1,5 @@
-using System.Reflection;
 using DibBase.ModelBase;
 using DibBase.Obfuscation;
-using DibBaseSampleApi.Controllers;
 
 namespace DibBaseApi;
 
