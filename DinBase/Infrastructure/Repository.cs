@@ -25,7 +25,7 @@ public class Repository<T>(DbContext context) where T : Entity
         await _context.Set<Event>().AddAsync(e, ct);
     }
 
-    public async Task<T?> GetById(long id, IEnumerable<Expression<Func<T, object>>>? expand = null, CancellationToken ct = default)
+    public async Task<T?> GetById(long id, IEnumerable<Expression<Func<T, object?>>>? expand = null, CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
@@ -39,7 +39,7 @@ public class Repository<T>(DbContext context) where T : Entity
         return entity;
     }
 
-    public async Task<List<T>> GetByIds(IEnumerable<long> ids, IEnumerable<Expression<Func<T, object>>>? expand = null, CancellationToken ct = default)
+    public async Task<List<T>> GetByIds(IEnumerable<long> ids, IEnumerable<Expression<Func<T, object?>>>? expand = null, CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
@@ -54,7 +54,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task<List<T>> GetAll(int skip = 0, int take = 1000,
         Expression<Func<T, bool>>? restrict = null,
-        IEnumerable<Expression<Func<T, object>>>? expand = null,
+        IEnumerable<Expression<Func<T, object?>>>? expand = null,
         CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();

@@ -8,7 +8,7 @@ public static class IQueryableExtensions
 {
     public static IQueryable<T> ApplyExpand<T>(
         this IQueryable<T> query,
-        IEnumerable<Expression<Func<T, object>>> expand) where T : Entity
+        IEnumerable<Expression<Func<T, object?>>> expand) where T : Entity
     {
         foreach (var e in expand)
             query = query.Include(e);
