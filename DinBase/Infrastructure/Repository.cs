@@ -83,7 +83,6 @@ public class Repository<T>(DbContext context) where T : Entity
     public async Task InsertAsync(T entity, CancellationToken ct)
     {
         var timeStamp = DateTime.Now;
-        Repository<T>.SetTimestamps(entity, timeStamp);
         IdFiller.SetIdsFromDsIds(entity, _context);
         await AuditChanges(entity, timeStamp, ct);
         await _context.Set<T>().AddAsync(entity, ct);
@@ -92,7 +91,6 @@ public class Repository<T>(DbContext context) where T : Entity
     public async Task UpdateAsync(T entity, CancellationToken ct)
     {
         var timeStamp = DateTime.Now;
-        Repository<T>.SetUpdatedTimestamp(entity, timeStamp);
         IdFiller.SetIdsFromDsIds(entity, _context);
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
@@ -112,33 +110,37 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task CommitAsync(CancellationToken ct)
     {
+        var now = DateTime.UtcNow;
         var addedEntities = _context.ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .Where(e => e.State == EntityState.Added)
             .Select(e => e.Entity)
             .ToList();
 
-        await _context.SaveChangesAsync(ct);
+        var updatedEntities = _context.ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+
+        var allChangedEntities = addedEntities.Concat(updatedEntities);
+        
         foreach (var entity in addedEntities)
+            if (entity is ITimeStamped t)
+            {
+                t.CreatedAt = now;
+                t.UpdatedAt = now;
+            }
+
+        foreach (var entity in updatedEntities)
+            if (entity is ITimeStamped t)
+                t.UpdatedAt = now;
+
+        await _context.SaveChangesAsync(ct);
+        foreach (var entity in allChangedEntities)
             if (entity is Entity e)
                 IdFiller.FillDsIds(e, _context);
     }
 
     public void Clear() => _context.ChangeTracker.Clear();
-
-    static void SetTimestamps(T entity, DateTime timeStamp)
-    {
-        if (entity is ITimeStamped tsEntity)
-        {
-            tsEntity.CreatedAt = timeStamp;
-            tsEntity.UpdatedAt = timeStamp;
-        }
-    }
-
-    static void SetUpdatedTimestamp(T entity, DateTime timeStamp)
-    {
-        if (entity is ITimeStamped tsEntity)
-            tsEntity.UpdatedAt = timeStamp;
-    }
 
     async Task AuditChanges(T entity, DateTime timeStamp, CancellationToken ct)
     {
