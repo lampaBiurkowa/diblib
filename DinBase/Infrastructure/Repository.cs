@@ -133,8 +133,7 @@ public class Repository<T>(DbContext context) where T : Entity
         foreach (var entity in updatedEntities)
             if (entity is ITimeStamped t)
             {
-                var entry = _context.Entry(entity);
-                t.CreatedAt = (DateTime)entry.OriginalValues[nameof(ITimeStamped.CreatedAt)]!; // :D/
+                t.CreatedAt = t.CreatedAt; // :D/
                 t.UpdatedAt = now;
             }
 
