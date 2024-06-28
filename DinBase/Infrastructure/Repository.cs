@@ -132,10 +132,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
         foreach (var entity in updatedEntities)
             if (entity is ITimeStamped t)
-            {
-                t.CreatedAt = t.CreatedAt; // :D/
                 t.UpdatedAt = now;
-            }
 
         await _context.SaveChangesAsync(ct);
         foreach (var entity in allChangedEntities)
