@@ -20,7 +20,7 @@ public static class IdFiller
                 var navigationProperty = attributeData.ConstructorArguments.FirstOrDefault().Value?.ToString();
                 if (string.IsNullOrEmpty(navigationProperty)) break;
                 
-                if (p.PropertyType == typeof(Guid))
+                if (p.PropertyType == typeof(Guid) || (p.PropertyType == typeof(Guid?)))
                 {
                     var refId = (long?)ctx.Entry(entity).Property($"{navigationProperty}Id").CurrentValue;
                     if (refId != null)
