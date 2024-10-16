@@ -39,13 +39,18 @@ public class Repository<T>(DbContext context) where T : Entity
         return entity;
     }
 
-    public async Task<List<T>> GetByIds(IEnumerable<long> ids, IEnumerable<Expression<Func<T, object?>>>? expand = null, CancellationToken ct = default)
+    public async Task<List<T>> GetByIds(
+        IEnumerable<long> ids,
+        IEnumerable<Expression<Func<T, object?>>>? expand = null,
+        Expression<Func<T, object>>? orderBy = null,
+        CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
         if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
         if (expand != null) query = query.ApplyExpand(expand);
+        if (orderBy != null) query = query.OrderBy(orderBy);
 
         var results = await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
@@ -55,6 +60,7 @@ public class Repository<T>(DbContext context) where T : Entity
     public async Task<List<T>> GetAll(int skip = 0, int take = 1000,
         Expression<Func<T, bool>>? restrict = null,
         IEnumerable<Expression<Func<T, object?>>>? expand = null,
+        Expression<Func<T, object>>? orderBy = null,
         CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
@@ -63,6 +69,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
         if (expand != null) query = query.ApplyExpand(expand);
         if (restrict != null) query = query.Where(restrict);
+        if (orderBy != null) query = query.OrderBy(orderBy);
 
         var results = await query.Skip(skip).Take(take).ToListAsync(ct);
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
