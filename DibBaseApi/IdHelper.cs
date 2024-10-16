@@ -1,3 +1,4 @@
+using System.Collections;
 using DibBase.ModelBase;
 using DibBase.Obfuscation;
 
@@ -21,6 +22,16 @@ public static class IdHelper
         foreach (var p in entityProps)
             if (p.GetValue(entity) is Entity nestedEntity)
                 HidePrivateId(nestedEntity);
+
+        var listProps = entity.GetType().GetProperties()
+            .Where(prop => prop.PropertyType.IsGenericType && 
+                typeof(IEnumerable).IsAssignableFrom(prop.PropertyType) &&
+                prop.IsDefined(typeof(DsGuidListAttribute), false));
+
+        foreach (var p in listProps)
+            if (p.GetValue(entity) is IEnumerable<Entity> collection)
+                foreach (var item in collection)
+                    item.Id = default;
 
         return entity;
     }
