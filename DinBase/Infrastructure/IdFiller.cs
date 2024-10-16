@@ -41,14 +41,16 @@ public static class IdFiller
                         }
                     }
                 }
-                else if (typeof(IEnumerable).IsAssignableFrom(p.PropertyType) && p.PropertyType.IsGenericType)
-                    if (typeof(Entity).IsAssignableFrom(p.PropertyType.GenericTypeArguments[0]))
-                        if (p.GetValue(entity) is IEnumerable<Entity> collection)
-                            foreach (var item in collection)
-                                FillDsIds(item, ctx);
-
             }
         }
+
+        var listProps = entity.GetType().GetProperties().Where(x => x.IsDefined(typeof(DsGuidListAttribute), false));
+        foreach (var p in listProps)
+            if (typeof(IEnumerable).IsAssignableFrom(p.PropertyType) && p.PropertyType.IsGenericType)
+                if (typeof(Entity).IsAssignableFrom(p.PropertyType.GenericTypeArguments[0]))
+                    if (p.GetValue(entity) is IEnumerable<Entity> collection)
+                        foreach (var item in collection)
+                            FillDsIds(item, ctx);
 
         var nestedProps = entity.GetType().GetProperties().Where(x => typeof(Entity).IsAssignableFrom(x.PropertyType));
         foreach (var p in nestedProps)

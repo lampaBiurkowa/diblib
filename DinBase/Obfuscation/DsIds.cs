@@ -7,6 +7,11 @@ public class DsGuidAttribute(string navigationProperty) : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Property)]
-public class DsLongAttribute() : Attribute
+public class DsLongAttribute : Attribute
+{
+}
+
+[AttributeUsage(AttributeTargets.Property)]
+public class DsGuidListAttribute : Attribute
 {
 }
