@@ -1,3 +1,4 @@
+using System.Collections;
 using DibBase.Extensions;
 using DibBase.ModelBase;
 using DibBase.Obfuscation;
@@ -40,6 +41,12 @@ public static class IdFiller
                         }
                     }
                 }
+                else if (typeof(IEnumerable).IsAssignableFrom(p.PropertyType) && p.PropertyType.IsGenericType)
+                    if (typeof(Entity).IsAssignableFrom(p.PropertyType.GenericTypeArguments[0]))
+                        if (p.GetValue(entity) is IEnumerable<Entity> collection)
+                            foreach (var item in collection)
+                                FillDsIds(item, ctx);
+
             }
         }
 
