@@ -8,7 +8,7 @@ namespace DibBase.Infrastructure;
 
 public class DibContext : DbContext
 {
-    public DibContext(DbContextOptions<DibContext> options) : base(options) { }
+    public DibContext(DbContextOptions<DbContext> options) : base(options) { }
 
     public DibContext() : base()
     {
