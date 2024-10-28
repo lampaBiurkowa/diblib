@@ -9,5 +9,5 @@ public class Audit : Entity
     public required string ChangedField { get; set; }
     public string? OldValue { get; set; }
     public string? NewValue { get; set; }
-    public DateTime ChangedAt { get; set; }
+    public DateTimeOffset ChangedAt { get; set; }
 }

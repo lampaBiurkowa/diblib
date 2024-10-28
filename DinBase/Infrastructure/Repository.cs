@@ -16,7 +16,7 @@ public class Repository<T>(DbContext context) where T : Entity
     {
         var e = new Event()
         {
-            CreatedAt = DateTime.Now,
+            CreatedAt = DateTimeOffset.Now,
             Payload = JsonSerializer.Serialize(obj),
             Name = obj.GetType().FullName ?? obj.GetType().Name,
             IsPublished = false
@@ -89,7 +89,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task InsertAsync(T entity, CancellationToken ct)
     {
-        var timeStamp = DateTime.Now;
+        var timeStamp = DateTimeOffset.Now;
         IdFiller.SetIdsFromDsIds(entity, _context);
         await AuditChanges(entity, timeStamp, ct);
         await _context.Set<T>().AddAsync(entity, ct);
@@ -97,7 +97,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task UpdateAsync(T entity, CancellationToken ct)
     {
-        var timeStamp = DateTime.Now;
+        var timeStamp = DateTimeOffset.Now;
         IdFiller.SetIdsFromDsIds(entity, _context);
         await AuditChanges(entity, timeStamp, ct);
         _context.Entry(entity).State = EntityState.Modified;
@@ -117,7 +117,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public async Task CommitAsync(CancellationToken ct)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var addedEntities = _context.ChangeTracker.Entries()
             .Where(e => e.State == EntityState.Added)
             .Select(e => e.Entity)
@@ -149,7 +149,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
     public void Clear() => _context.ChangeTracker.Clear();
 
-    async Task AuditChanges(T entity, DateTime timeStamp, CancellationToken ct)
+    async Task AuditChanges(T entity, DateTimeOffset timeStamp, CancellationToken ct)
     {
         if (entity is not IAudited a)
             return;
