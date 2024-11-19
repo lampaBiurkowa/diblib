@@ -43,6 +43,7 @@ public class Repository<T>(DbContext context) where T : Entity
         IEnumerable<long> ids,
         IEnumerable<Expression<Func<T, object?>>>? expand = null,
         Expression<Func<T, object>>? orderBy = null,
+        bool? orderByAscending = true,
         CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
@@ -50,7 +51,7 @@ public class Repository<T>(DbContext context) where T : Entity
             query = query.Cast<ISoftDelete>().Where(e => !e.IsDeleted).Cast<T>();
 
         if (expand != null) query = query.ApplyExpand(expand);
-        if (orderBy != null) query = query.OrderBy(orderBy);
+        if (orderBy != null) query = orderByAscending == true ? query.OrderBy(orderBy) : query.OrderByDescending(orderBy);
 
         var results = await query.Where(e => ids.Contains(e.Id)).ToListAsync(ct);
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
@@ -61,6 +62,7 @@ public class Repository<T>(DbContext context) where T : Entity
         Expression<Func<T, bool>>? restrict = null,
         IEnumerable<Expression<Func<T, object?>>>? expand = null,
         Expression<Func<T, object>>? orderBy = null,
+        bool? orderByAscending = true,
         CancellationToken ct = default)
     {
         IQueryable<T> query = _context.Set<T>();
@@ -69,7 +71,7 @@ public class Repository<T>(DbContext context) where T : Entity
 
         if (expand != null) query = query.ApplyExpand(expand);
         if (restrict != null) query = query.Where(restrict);
-        if (orderBy != null) query = query.OrderBy(orderBy);
+        if (orderBy != null) query = orderByAscending == true ? query.OrderBy(orderBy) : query.OrderByDescending(orderBy);
 
         var results = await query.Skip(skip).Take(take).ToListAsync(ct);
         results.ForEach(x => IdFiller.FillDsIds(x, _context));
