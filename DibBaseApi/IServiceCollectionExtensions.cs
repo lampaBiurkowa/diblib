@@ -30,7 +30,9 @@ public static class IServiceCollectionExtensions
             await connection.CloseAsync();
             using var scope = services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<T>();
-            await context.Database.MigrateAsync();
+            var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+                await context.Database.MigrateAsync();
             return true;
         }
 
