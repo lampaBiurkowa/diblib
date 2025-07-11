@@ -10,6 +10,6 @@ public class DsDbLibOptions
     public required int Port { get; set; }
     public required bool Migrate { get; set; }
 
-    public string GetConnectionString(string dbName) =>
-        $"User ID={User};Password={Password};Host={Host};Port={Port};Database={dbName};";
+    public string GetConnectionString(string dbName, string schema) =>
+        $"User ID={User};Password={Password};Host={Host};Port={Port};Database={dbName};Search Path={schema}";
 }
