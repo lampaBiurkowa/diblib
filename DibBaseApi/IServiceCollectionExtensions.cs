@@ -38,6 +38,7 @@ public static class IServiceCollectionExtensions
                 schemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\"";
                 await schemaCommand.ExecuteNonQueryAsync();
             }
+            await dbContextConnection.CloseAsync();
             var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
             if (pendingMigrations.Any())
                 await context.Database.MigrateAsync();
