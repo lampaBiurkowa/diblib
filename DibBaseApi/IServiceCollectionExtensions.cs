@@ -38,10 +38,16 @@ public static class IServiceCollectionExtensions
                 schemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS {schemaName}";
                 await schemaCommand.ExecuteNonQueryAsync();
             }
-            await dbContextConnection.CloseAsync();
+            using (var setSchemaCommand = dbContextConnection.CreateCommand())
+            {
+                setSchemaCommand.CommandText = $"SET search_path TO {schemaName}";
+                await setSchemaCommand.ExecuteNonQueryAsync();
+            }
             var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
             if (pendingMigrations.Any())
                 await context.Database.MigrateAsync();
+            
+            await dbContextConnection.CloseAsync();
             return true;
         }
 
