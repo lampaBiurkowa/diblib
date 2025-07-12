@@ -35,7 +35,7 @@ public static class IServiceCollectionExtensions
             await dbContextConnection.OpenAsync();
             using (var schemaCommand = dbContextConnection.CreateCommand())
             {
-                schemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\"";
+                schemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS {schemaName}";
                 await schemaCommand.ExecuteNonQueryAsync();
             }
             await dbContextConnection.CloseAsync();
