@@ -12,6 +12,7 @@ public static class IServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration conf,
         string dbName,
+        string schemaName,
         DbConnection connection
     ) where T : DbContext
     {   
@@ -30,6 +31,13 @@ public static class IServiceCollectionExtensions
             await connection.CloseAsync();
             using var scope = services.BuildServiceProvider().CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<T>();
+            var dbContextConnection = context.Database.GetDbConnection();
+            await dbContextConnection.OpenAsync();
+            using (var schemaCommand = dbContextConnection.CreateCommand())
+            {
+                schemaCommand.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{schemaName}\"";
+                await schemaCommand.ExecuteNonQueryAsync();
+            }
             var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
             if (pendingMigrations.Any())
                 await context.Database.MigrateAsync();
